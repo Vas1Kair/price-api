@@ -15,7 +15,7 @@ const SYMBOLS = [
   // US stocks
   'MSFT', 'AMZN', 'ORCL', 'ETN', 'SYK', 'V', 'NFLX', 'UBER',
   'PANW', 'LIN', 'PEP', 'DIS', 'UPS', 'OXY', 'BABA', 'SMCI',
-  'UBS', 'NU',
+  'UBS', 'NU', 'SLG',
   // International — Yahoo Finance suffix format
   'ADS.DE',   // Adidas — Frankfurt
   'AIR.PA',   // Airbus — Paris
