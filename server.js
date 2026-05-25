@@ -101,6 +101,10 @@ app.get('/ping', (req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────
+app.get('/refresh', async (req, res) => {
+  const result = await refreshCache();
+  res.json({ success: true, count: Object.keys(result).length });
+});
 app.listen(PORT, () => {
   console.log(`Price API running on port ${PORT}`);
   // Pre-warm cache on startup
