@@ -105,8 +105,13 @@ app.get('/refresh', async (req, res) => {
   const result = await refreshCache();
   res.json({ success: true, count: Object.keys(result).length });
 });
+
+app.get('/test-anet', async (req, res) => {
+  const result = await fetchSymbol('ANET');
+  res.json({ result });
+});
+
 app.listen(PORT, () => {
   console.log(`Price API running on port ${PORT}`);
-  // Pre-warm cache on startup
   refreshCache();
 });
