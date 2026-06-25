@@ -111,6 +111,73 @@ app.get('/test-anet', async (req, res) => {
   res.json({ result });
 });
 
+
+// ── Finnhub ticker symbols ────────────────────────────────────
+const FINNHUB_KEY = 'd8ufe31r01qinhuhn3e0d8ufe31r01qinhuhn3eg';
+const TICKER_SYMBOLS = [
+  'NVDA','META','MSFT','AMZN','ASML','TSM','BABA',
+  'ORCL','NFLX','UBER','PANW','UBS','AMD','AAPL','GOOGL'
+];
+
+// ── Ticker cache — refresh every 60 seconds ───────────────────
+let tickerCache = [];
+let tickerCacheTime = 0;
+const TICKER_TTL = 60 * 1000;
+
+async function fetchFinnhubQuote(symbol) {
+  const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`;
+  try {
+    const res = await fetch(url, {
+      headers: { 'X-Finnhub-Token': FINNHUB_KEY }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const price = data.c;
+    const prev  = data.pc;
+    if (!price || !prev || price === 0) return null;
+    const chgPct = ((price - prev) / prev) * 100;
+    return {
+      sym:   symbol,
+      price: Math.round(price * 100) / 100,
+      chg:   Math.round(chgPct * 100) / 100,
+      pos:   chgPct >= 0
+    };
+  } catch(e) {
+    return null;
+  }
+}
+
+async function refreshTickerCache() {
+  console.log('Fetching ticker prices from Finnhub...');
+  const results = [];
+  for (const sym of TICKER_SYMBOLS) {
+    const data = await fetchFinnhubQuote(sym);
+    if (data) results.push(data);
+    // Small delay to respect Finnhub rate limits
+    await new Promise(r => setTimeout(r, 150));
+  }
+  tickerCache     = results;
+  tickerCacheTime = Date.now();
+  console.log(`Ticker cache updated: ${results.length}/${TICKER_SYMBOLS.length} symbols`);
+  return results;
+}
+
+// ── /ticker endpoint ──────────────────────────────────────────
+app.get('/ticker', async (req, res) => {
+  try {
+    if (Date.now() - tickerCacheTime > TICKER_TTL || tickerCache.length === 0) {
+      await refreshTickerCache();
+    }
+    res.json({
+      success:   true,
+      ticker:    tickerCache,
+      cached_at: new Date(tickerCacheTime).toISOString()
+    });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Price API running on port ${PORT}`);
   refreshCache();
